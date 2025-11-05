@@ -608,7 +608,7 @@ items.items.forEach(item => {
       modal.style.display = "block";
     }
 
-       /* function openEmailClient() {
+       function openEmailClient() {
       const name = document.getElementById("wishName").value;
       const osasto = document.getElementById("wishOsasto").value;
       const itemName = document.getElementById("modalTitle").textContent;
@@ -627,47 +627,8 @@ const body = `Hei,%0D%0A%0D%0ATehyin toiveen esineestä:%0D%0A
     Terveisin,%0D%0A${encodeURIComponent(name)}`;
       // Open the default email client
       window.location.href = `mailto:kirjasto@askola.fi?subject=${subject}&body=${body}`;
-    } */
-
-function openEmailClient() {
-  const name = document.getElementById("wishName").value;
-  const osasto = document.getElementById("wishOsasto").value;
-  const itemName = document.getElementById("modalTitle").textContent;
-  const currentItem = items.items.find(item => item.name === itemName);
-  const itemId = currentItem.id;
-  const itemImage = currentItem.image;
-
-  const subject = `New request: ${itemName}`;
-  const body = `Hi,
-
-I would like to request the following item:
-- ID: ${itemId}
-- Item: ${itemName}
-- Image: ${itemImage}
-- Name: ${name}
-- Department: ${osasto}
-
-Best regards,
-${name}`;
-
-  // Check if it's a mobile device
-  if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-    if (window.plugins && window.plugins.emailComposer) {
-      window.plugins.emailComposer.open({
-        to: ['kirjasto@askola.fi'],
-        subject: subject,
-        body: body,
-        isHtml: false
-      });
-    } else {
-      // Fallback method
-      window.location.href = `mailto:kirjasto@askola.fi?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
-  } else {
-    // Desktop fallback
-    window.location.href = `mailto:kirjasto@askola.fi?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  }
-}
+
 
     // Clear form fields when closing the modal
     span.onclick = function() {
