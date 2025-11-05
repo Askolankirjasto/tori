@@ -111,7 +111,7 @@
       border-radius: 8px;
       width: 90%;
       max-width: 800px;
-      max-height: 90vh; /* Limit modal height */
+      max-height: 80vh; /* Limit modal height */
       overflow-y: auto; /* Enable scrolling inside modal */
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
@@ -179,13 +179,20 @@
       <h2 id="modalTitle"></h2>
       <p><strong>Sijainti:</strong> <span id="modalLocation"></span></p>
       <p><strong>Tila:</strong> <span id="modalStatus" class="status"></span></p>
-      <div class="wish-form">
-        <h3>Tee varaus</h3>
-        <label for="wishName">Nimi:</label>
-        <input type="text" id="wishName" placeholder="Syötä nimesi">
-        <label for="wishOsasto">Osasto:</label>
-        <input type="text" id="wishOsasto" placeholder="Syötä osastosi">
-        <button onclick="openEmailClient()">Lähetä</button>
+            <!-- Formspree form -->
+       <div class="wish-form">
+        <form id="wishForm" action="https://formspree.io/f/mjkpnkle" method="POST">
+          <h3>Tee varaus</h3>
+          <label for="wishName">Nimi:</label>
+          <input type="text" id="wishName" name="name" placeholder="Syötä nimesi" required>
+          <label for="wishOsasto">Osasto:</label>
+          <input type="text" id="wishOsasto" name="osasto" placeholder="Syötä osastosi" required>
+          <!-- Hidden fields for item details -->
+          <input type="hidden" id="itemIdField" name="itemId">
+          <input type="hidden" id="itemNameField" name="itemName">
+          <input type="hidden" id="itemImageField" name="itemImage">
+          <button type="submit">Lähetä</button>
+        </form>
       </div>
     </div>
   </div>
@@ -559,36 +566,36 @@
     }
 
     // Näytä esineet
-   const container = document.getElementById('items');
-items.items.forEach(item => {
-  const itemDiv = document.createElement('div');
-  itemDiv.className = `item`;
-  const statusClass = getStatusClass(item.status);
-  itemDiv.innerHTML = `
-    <img src="${item.image}" alt="${item.name}">
-    <h3>${item.name}</h3>
-    <p><strong>Sijainti:</strong> ${item.location}</p>
-    <p><strong>Tila:</strong> <span class="status ${statusClass}">${item.status}</span></p>
-    <div class="wishlist">
-      ${item.wishlist.length > 0 ? '<p><strong>Toiveet:</strong></p>' : ''}
-      ${item.wishlist.map(w => {
-        const date = new Date(w.timestamp);
-        const options = {
-          year: 'numeric',
-          month: 'numeric',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        };
-        return `<p>${w.organization} (${date.toLocaleString('fi-FI', options)})</p>`;
-      }).join('')}
-    </div>
-  `;
-  itemDiv.onclick = () => openModal(item);
-  container.appendChild(itemDiv);
-});
-
+     // Display items
+    const container = document.getElementById('items');
+    items.items.forEach(item => {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = `item`;
+      const statusClass = getStatusClass(item.status);
+      itemDiv.innerHTML = `
+        <img src="${item.image}" alt="${item.name}">
+        <h3>${item.name}</h3>
+        <p><strong>Sijainti:</strong> ${item.location}</p>
+        <p><strong>Tila:</strong> <span class="status ${statusClass}">${item.status}</span></p>
+        <div class="wishlist">
+          ${item.wishlist.length > 0 ? '<p><strong>Toiveet:</strong></p>' : ''}
+          ${item.wishlist.map(w => {
+            const date = new Date(w.timestamp);
+            const options = {
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            };
+            return `<p>${w.organization} (${date.toLocaleString('fi-FI', options)})</p>`;
+          }).join('')}
+        </div>
+      `;
+      itemDiv.onclick = () => openModal(item);
+      container.appendChild(itemDiv);
+    });
 
     // Modal functions
     const modal = document.getElementById("itemModal");
@@ -598,37 +605,20 @@ items.items.forEach(item => {
       // Clear form fields when opening the modal
       document.getElementById("wishName").value = "";
       document.getElementById("wishOsasto").value = "";
-
       document.getElementById("modalImage").src = item.image;
       document.getElementById("modalTitle").textContent = item.name;
       document.getElementById("modalLocation").textContent = item.location;
       const statusSpan = document.getElementById("modalStatus");
       statusSpan.textContent = item.status;
       statusSpan.className = "status " + getStatusClass(item.status);
+
+      // Populate hidden fields with item details
+      document.getElementById("itemIdField").value = item.id;
+      document.getElementById("itemNameField").value = item.name;
+      document.getElementById("itemImageField").value = item.image;
+
       modal.style.display = "block";
     }
-
-       function openEmailClient() {
-      const name = document.getElementById("wishName").value;
-      const osasto = document.getElementById("wishOsasto").value;
-      const itemName = document.getElementById("modalTitle").textContent;
-        const currentItem = items.items.find(item => item.name === itemName);
-      const itemId = currentItem.id;
-  const itemImage = currentItem.image;
-
-      // Pre-fill the email
-      const subject = `Uusi toive: ${encodeURIComponent(itemName)}`;
-const body = `Hei,%0D%0A%0D%0ATehyin toiveen esineestä:%0D%0A
-    - ID: ${encodeURIComponent(itemId)}%0D%0A
-    - Esine: ${encodeURIComponent(itemName)}%0D%0A
-    - Kuvan nimi: ${encodeURIComponent(itemImage)}%0D%0A
-    - Nimi: ${encodeURIComponent(name)}%0D%0A
-    - Osasto: ${encodeURIComponent(osasto)}%0D%0A%0D%0A
-    Terveisin,%0D%0A${encodeURIComponent(name)}`;
-      // Open the default email client
-      window.location.href = `mailto:kirjasto@askola.fi?subject=${subject}&body=${body}`;
-    }
-
 
     // Clear form fields when closing the modal
     span.onclick = function() {
@@ -645,7 +635,7 @@ const body = `Hei,%0D%0A%0D%0ATehyin toiveen esineestä:%0D%0A
       }
     }
 
-    // Päivitä päivämäärä
+    // Update last updated date
     document.getElementById('last-updated').textContent = new Date().toLocaleDateString('fi-FI');
   </script>
 </body>
