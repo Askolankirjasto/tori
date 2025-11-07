@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Toivelista</title>
-  <style>
+   <style>
+
+
+    
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -102,7 +105,7 @@
       width: 100%;
       height: 100%;
       background-color: rgba(0, 0, 0, 0.7);
-      overflow-y: auto; /* Enable scrolling */
+      overflow-y: auto;
     }
     .modal-content {
       background-color: #fefefe;
@@ -111,13 +114,13 @@
       border-radius: 8px;
       width: 90%;
       max-width: 800px;
-      max-height: 80vh; /* Limit modal height */
-      overflow-y: auto; /* Enable scrolling inside modal */
+      max-height: 90vh;
+      overflow-y: auto;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
     .modal-img {
       width: 100%;
-      max-height: 500px; 
+      max-height: 500px;
       object-fit: contain;
       border-radius: 6px;
       margin-bottom: 20px;
@@ -132,36 +135,24 @@
     .close:hover {
       color: #333;
     }
-    .wish-form {
-      margin-top: 20px;
-    }
-    .wish-form label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-    .wish-form input {
+ /* Google Form iframe container */
+    .google-form-container {
       width: 100%;
-      padding: 8px;
-      margin-bottom: 15px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+      height: 600px; /* Increased height */
     }
-    .wish-form button {
-      background: #3498db;
-      color: white;
+    .google-form-container iframe {
+      width: 100%;
+      height: 100%;
       border: none;
-      padding: 10px 15px;
-      border-radius: 4px;
-      cursor: pointer;
+      border-radius: 6px;
     }
-    .wish-form button:hover {
-      background: #2980b9;
-    }
+
+
+
   </style>
 </head>
 <body>
-  <header>
+ <header>
     <h1>Toivelista</h1>
   </header>
   <div class="container">
@@ -171,31 +162,28 @@
     <p>Viimeksi päivitetty: <span id="last-updated"></span></p>
   </footer>
 
-  <!-- Modal for enlarged image and wish form -->
-  <div id="itemModal" class="modal">
+<div id="itemModal" class="modal">
     <div class="modal-content">
       <span class="close">&times;</span>
       <img id="modalImage" class="modal-img" alt="Esineen kuva">
       <h2 id="modalTitle"></h2>
       <p><strong>Sijainti:</strong> <span id="modalLocation"></span></p>
       <p><strong>Tila:</strong> <span id="modalStatus" class="status"></span></p>
-            <!-- Formspree form -->
-       <div class="wish-form">
-        <form id="wishForm" action="https://formspree.io/f/mjkpnkle" method="POST">
-          <h3>Tee varaus</h3>
-          <label for="wishName">Nimi:</label>
-          <input type="text" id="wishName" name="name" placeholder="Syötä nimesi" required>
-          <label for="wishOsasto">Osasto:</label>
-          <input type="text" id="wishOsasto" name="osasto" placeholder="Syötä osastosi" required>
-          <!-- Hidden fields for item details -->
-          <input type="hidden" id="itemIdField" name="itemId">
-          <input type="hidden" id="itemNameField" name="itemName">
-          <input type="hidden" id="itemImageField" name="itemImage">
-          <button type="submit">Lähetä</button>
-        </form>
+      <div class="google-form-container">
+        <iframe
+          id="googleFormIframe"
+          frameborder="0"
+          marginheight="0"
+          marginwidth="0"
+          title="Varauslomake">
+          Ladataan…
+        </iframe>
       </div>
     </div>
   </div>
+
+
+
 
   <script>
     // Liitä JSON-datasi tähän
@@ -239,8 +227,10 @@
           "name": "Matala hylly",
           "image": "img/signal-2025-10-03-095436_008.jpeg",
           "location": "Monninkylän kirjasto",
-          "status": "saatavilla",
-          "wishlist": []
+          "status": "1 toive",
+          "wishlist": [
+            {"organization": "Askolan kirjasto", "timestamp": "2025-11-05T15:00"}
+          ]
         },
        
         {
@@ -555,7 +545,6 @@
       ]
     };
 
-    // Määritä statuksen ja CSS-luokan välinen yhteys
     function getStatusClass(status) {
       switch (status) {
         case "saatavilla": return "saatavilla";
@@ -565,8 +554,6 @@
       }
     }
 
-    // Näytä esineet
-     // Display items
     const container = document.getElementById('items');
     items.items.forEach(item => {
       const itemDiv = document.createElement('div');
@@ -579,8 +566,8 @@
         <p><strong>Tila:</strong> <span class="status ${statusClass}">${item.status}</span></p>
         <div class="wishlist">
           ${item.wishlist.length > 0 ? '<p><strong>Toiveet:</strong></p>' : ''}
-          ${item.wishlist.map(w => {
-            const date = new Date(w.timestamp);
+          ${item.wishlist.map(wish => {
+            const date = new Date(wish.timestamp);
             const options = {
               year: 'numeric',
               month: 'numeric',
@@ -589,7 +576,7 @@
               minute: '2-digit',
               hour12: false
             };
-            return `<p>${w.organization} (${date.toLocaleString('fi-FI', options)})</p>`;
+            return `<p>${wish.organization} (${date.toLocaleString('fi-FI', options)})</p>`;
           }).join('')}
         </div>
       `;
@@ -597,14 +584,12 @@
       container.appendChild(itemDiv);
     });
 
-    // Modal functions
     const modal = document.getElementById("itemModal");
     const span = document.getElementsByClassName("close")[0];
+    let currentItem = null;
 
     function openModal(item) {
-      // Clear form fields when opening the modal
-      document.getElementById("wishName").value = "";
-      document.getElementById("wishOsasto").value = "";
+      currentItem = item;
       document.getElementById("modalImage").src = item.image;
       document.getElementById("modalTitle").textContent = item.name;
       document.getElementById("modalLocation").textContent = item.location;
@@ -612,30 +597,40 @@
       statusSpan.textContent = item.status;
       statusSpan.className = "status " + getStatusClass(item.status);
 
-      // Populate hidden fields with item details
-      document.getElementById("itemIdField").value = item.id;
-      document.getElementById("itemNameField").value = item.name;
-      document.getElementById("itemImageField").value = item.image;
+      // Construct the pre-filled URL
+     const formUrl = `https://docs.google.com/forms/d/e/1FAIpQLSdkZQDezFVGBz-g5-fVTnjtF9MMs_5Gvnb4UH5c2IOSll4AEQ/viewform?usp=pp_url
+  &entry.565171895=${encodeURIComponent(item.id)}
+  &entry.33603201=${encodeURIComponent(item.name)}
+  &entry.70054041=${encodeURIComponent(item.image)}`;
+  console.log(formUrl);
+
+
+      // Set the iframe source to the pre-filled URL
+      document.getElementById("googleFormIframe").src = formUrl;
 
       modal.style.display = "block";
     }
 
-    // Clear form fields when closing the modal
     span.onclick = function() {
-      document.getElementById("wishName").value = "";
-      document.getElementById("wishOsasto").value = "";
       modal.style.display = "none";
-    }
+    };
 
     window.onclick = function(event) {
       if (event.target == modal) {
-        document.getElementById("wishName").value = "";
-        document.getElementById("wishOsasto").value = "";
         modal.style.display = "none";
       }
-    }
+    };
+    
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape' && modal.style.display === 'block') {
+    modal.style.display = 'none';
+  }
+});
+document.body.style.overflow = 'hidden';
+document.body.style.overflow = 'auto';
 
-    // Update last updated date
+
+
     document.getElementById('last-updated').textContent = new Date().toLocaleDateString('fi-FI');
   </script>
 </body>
